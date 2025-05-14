@@ -20,6 +20,7 @@
 
         <main class="main-content">
             <section id="input-section" class="content-section active-section">
+                <!-- ... (existing input form, no changes here) ... -->
                 <div class="input-card">
                     <h2>Search</h2>
                     <p>Provide your name and a clear photo to start.</p>
@@ -50,6 +51,7 @@
             </section>
 
             <section id="processing-section" class="content-section">
+                <!-- ... (existing processing display, no changes here) ... -->
                 <div class="processing-card">
                     <h2><i class="fas fa-gears"></i> Analyzing Your Information</h2>
                     <p>This may take a few moments. Please wait...</p>
@@ -81,6 +83,30 @@
         <footer class="site-footer-bottom">
             <p>© 2024-2025 AML Wild Face Detector Project. All rights reserved.</p>
         </footer>
+    </div>
+
+    <!-- Modal for displaying explanations -->
+    <div id="explanation-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">×</span>
+            <h3>Similarity Explanation</h3>
+            <div id="explanation-loading" style="display:none;">
+                <p><i class="fas fa-spinner fa-spin"></i> Generating explanation, please wait...</p>
+            </div>
+            <div id="explanation-error" class="error-card" style="display:none;">
+                <p>Could not generate explanation.</p>
+            </div>
+            <div id="explanation-images-container" class="explanation-images">
+                <div class="explanation-image-pair">
+                    <h4>Your Photo</h4>
+                    <img id="query-heatmap-img" src="#" alt="Query Photo Heatmap">
+                </div>
+                <div class="explanation-image-pair">
+                    <h4>Matched Member's Photo</h4>
+                    <img id="member-heatmap-img" src="#" alt="Member Photo Heatmap">
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

@@ -2,7 +2,8 @@
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PUBLIC_DIR = os.path.join(os.path.dirname(BASE_DIR), "public") # Assuming 'public' is one level up from project root
+PROJECT_ROOT_DIR = os.path.dirname(BASE_DIR) # aml-wild-face-detector/
+PUBLIC_DIR = os.path.join(PROJECT_ROOT_DIR, "public") # Assuming 'public' is one level up from project root
 
 # Data paths
 FIW_RIDS_CSV = os.path.join(PUBLIC_DIR, "FIW_RIDs.csv")
@@ -26,28 +27,29 @@ FAMILY_CLASSIFIER_PATH = os.path.join(MODELS_DIR, "family_membership_classifier.
 RELATIONSHIP_CLASSIFIER_PATH = os.path.join(MODELS_DIR, "relationship_classifier.cbm")
 
 # Embedding models
-FACE_EMBEDDING_MODEL = "Facenet512" # Options: "VGG-Face", "Facenet", "Facenet512", "OpenFace", "DeepFace", "DeepID", "ArcFace", "Dlib", "SFace"
-NAME_EMBEDDING_MODEL = "all-MiniLM-L6-v2" # from sentence-transformers
-
-# Embedding dimensions (Facenet512 is 512, all-MiniLM-L6-v2 is 384)
-# DeepFace's represent function for Facenet512 returns a 128-dim embedding. Check docs or output.
-# For "Facenet512" via DeepFace, it's usually 128. Let's verify or use a model with known dim.
-# ArcFace often gives 512. Let's use ArcFace for higher dim.
-FACE_EMBEDDING_MODEL_DEEPFACE = "ArcFace"
+FACE_EMBEDDING_MODEL_DEEPFACE = "ArcFace" # Ensure this model works well with SHAP GradientExplainer (TF-based)
 FACE_EMBEDDING_DIM = 512 # ArcFace default
-NAME_EMBEDDING_DIM = 384 # all-MiniLM-L6-v2
+NAME_EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+NAME_EMBEDDING_DIM = 384
 
 # Search parameters
-FAISS_SEARCH_TOP_K = 20 # How many results to fetch from FAISS initially
-RRF_K = 60 # RRF constant for score calculation
+FAISS_SEARCH_TOP_K = 20
+RRF_K = 60
 
 # Classifier thresholds
-FAMILY_MEMBERSHIP_THRESHOLD = 0.6 # Min probability to consider person belongs to family
-STRONG_DIRECT_MATCH_SIMILARITY_THRESHOLD = 0.85 # For face similarity, if above this might be direct match
+FAMILY_MEMBERSHIP_THRESHOLD = 0.6
+STRONG_DIRECT_MATCH_SIMILARITY_THRESHOLD = 0.85
+
+# Explanation settings
+EXPLAINABILITY_DIR_NAME = "explanations" # Subdirectory in interface/static for explanation images
+EXPLANATIONS_DIR_ABS_PATH = os.path.join(PROJECT_ROOT_DIR, "interface", "static", EXPLAINABILITY_DIR_NAME)
+EXPLANATIONS_URL_PREFIX = f"/static/{EXPLAINABILITY_DIR_NAME}" # URL prefix to serve these images
 
 # Create directories if they don't exist
 os.makedirs(EMBEDDINGS_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
+os.makedirs(EXPLANATIONS_DIR_ABS_PATH, exist_ok=True)
 
-# Logging configuration (can be expanded in utils/helpers.py)
+
+# Logging configuration
 LOG_LEVEL = "INFO"
