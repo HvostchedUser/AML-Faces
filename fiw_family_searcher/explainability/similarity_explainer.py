@@ -6,6 +6,7 @@ from deepface import DeepFace
 from PIL import Image
 import os
 import uuid
+from scipy.ndimage import gaussian_filter
 import matplotlib
 
 matplotlib.use('Agg')  # Explicitly set backend for Matplotlib before importing pyplot
@@ -235,6 +236,7 @@ class SimilarityExplainer:
             return None
 
         # After squeezing, shap_values_arr should be (H, W, C_input) e.g. (112, 112, 3)
+        # original_image_0_1_resized is also (H, W, C_input)
         if not (shap_values_arr.ndim == 3 and shap_values_arr.shape == original_image_0_1_resized.shape):
             logger.error(
                 f"SHAP values for {base_filename_prefix} have incorrect shape {shap_values_arr.shape}. "
@@ -247,28 +249,52 @@ class SimilarityExplainer:
             filename = f"{base_filename_prefix}_{unique_id}.png"
             output_path = os.path.join(config.EXPLANATIONS_DIR_ABS_PATH, filename)
 
-            # shap.image_plot expects SHAP values as (batch, H, W, C) or (batch, H, W)
-            # and pixel_values (original images) also (batch, H, W, C)
-            # Our shap_values_arr is now (H,W,C), original_image_0_1_resized is (H,W,C)
-            shap_values_for_plot = np.expand_dims(shap_values_arr.astype(np.float64), axis=0)  # Add batch dim
-            pixel_values_for_plot = np.expand_dims(original_image_0_1_resized.astype(np.float64),
-                                                   axis=0)  # Add batch dim
+            # --- Visual Enhancement Steps ---
+            # 1. Take absolute values of SHAP contributions per channel
+            abs_shap_values = np.abs(shap_values_arr)
 
-            # Sum SHAP values over color channels for a single heatmap overlay
-            shap_values_overlay = np.sum(shap_values_for_plot, axis=-1, keepdims=True)
+            # 2. Sum absolute SHAP values across color channels to get a single importance map (H, W)
+            importance_map_raw = np.sum(abs_shap_values, axis=-1)
 
-            if np.isnan(shap_values_overlay).any() or np.isinf(shap_values_overlay).any():
-                logger.warning(f"Clamping NaN/Inf in SHAP values for {base_filename_prefix} plot.")
-                shap_values_overlay = np.nan_to_num(shap_values_overlay, nan=0.0, posinf=1e9, neginf=-1e9)
+            # 3. Apply Gaussian blur to smooth out the importance map
+            sigma = 2.5  # Increased sigma for more blur
+            blurred_importance_map = gaussian_filter(importance_map_raw, sigma=sigma)
 
-            fig = plt.figure()
-            shap.image_plot(
-                shap_values=shap_values_overlay,
-                pixel_values=pixel_values_for_plot,
-                show=False
-            )
-            plt.savefig(output_path, bbox_inches='tight')
-            plt.close(fig)
+            # 4. Normalize the blurred map to [0, 1] for consistent visualization alpha blending
+            map_min = np.min(blurred_importance_map)
+            map_max = np.max(blurred_importance_map)
+            if map_max - map_min > 1e-6:
+                normalized_importance_map = (blurred_importance_map - map_min) / (map_max - map_min)
+            else:
+                normalized_importance_map = np.zeros_like(blurred_importance_map)
+
+            # --- Manual Plotting for Better Control ---
+            fig, ax = plt.subplots(figsize=(6, 6))  # Adjust figsize as needed
+
+            # Convert original image to grayscale for display
+            # original_image_0_1_resized is (H, W, 3) and in [0,1]
+            # Standard luminance weights for RGB to Grayscale: R*0.299 + G*0.587 + B*0.114
+            grayscale_image = np.dot(original_image_0_1_resized[..., :3], [0.2989, 0.5870, 0.1140])
+
+            # Display the grayscale original image with reduced visibility (more transparent)
+            # Using a grayscale colormap for the grayscale image.
+            ax.imshow(grayscale_image, cmap='gray', alpha=0.4)  # Adjust alpha (e.g., 0.3-0.5) to make it less visible
+
+            # Overlay the normalized importance map with a green colormap
+            # 'Greens' colormap: lighter green for low values, darker green for high values
+            # Alpha controls transparency of the overlay.
+            # We can make the heatmap slightly more opaque now that the background is faded.
+            heatmap_alpha_value = 0.7  # Adjust transparency for the heatmap (0.6-0.8)
+            ax.imshow(normalized_importance_map, cmap='Greens',
+                      alpha=heatmap_alpha_value * normalized_importance_map,
+                      interpolation='bilinear')
+            # The `alpha=heatmap_alpha_value * normalized_importance_map` makes areas with low importance more transparent.
+
+            ax.axis('off')  # Turn off axis numbers and ticks
+
+            # Save the figure
+            plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
+            plt.close(fig)  # Close the figure to free memory
 
             logger.info(f"SHAP heatmap saved: {output_path}")
             return f"{config.EXPLANATIONS_URL_PREFIX}/{filename}"
