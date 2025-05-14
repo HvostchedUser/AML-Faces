@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Finder | AML</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="page-container">
+        <header class="site-header">
+            <div class="logo-container">
+                <i class="fas fa-users-rays logo-icon"></i>
+                <h1>Family Finder</h1>
+            </div>
+            <p class="tagline">Find your potential relatives in our database.</p>
+        </header>
+
+        <main class="main-content">
+            <section id="input-section" class="content-section active-section">
+                <div class="input-card">
+                    <h2>Search</h2>
+                    <p>Provide your name and a clear photo to start.</p>
+                    <form id="search-form">
+                        <div class="form-group">
+                            <label for="name"><i class="fas fa-user-edit"></i> Your Full Name (Optional)</label>
+                            <input type="text" id="name" name="name" placeholder="e.g., Alex Doe">
+                        </div>
+                        <div class="form-group">
+                            <label for="photo"><i class="fas fa-camera-retro"></i> Upload Your Photo</label>
+                            <div class="photo-upload-wrapper">
+                                <input type="file" id="photo" name="photo" accept="image/png, image/jpeg" required>
+                                <label for="photo" class="photo-upload-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Choose a photo...</span>
+                                </label>
+                            </div>
+                            <div class="photo-preview-container">
+                                <img id="photo-preview" src="#" alt="Your photo preview" style="display:none;"/>
+                            </div>
+                        </div>
+                        <button type="submit" id="search-button" class="cta-button">
+                            <span class="button-text">Search</span>
+                            <i class="fas fa-spinner fa-spin button-spinner" style="display:none;"></i>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <section id="processing-section" class="content-section">
+                <div class="processing-card">
+                    <h2><i class="fas fa-gears"></i> Analyzing Your Information</h2>
+                    <p>This may take a few moments. Please wait...</p>
+                    <div class="progress-bar-container">
+                        <div id="main-progress-bar" class="progress-bar"></div>
+                    </div>
+                    <ul id="progress-steps-list">
+                        <!-- Progress steps will be dynamically added here -->
+                    </ul>
+                </div>
+            </section>
+
+            <section id="results-section" class="content-section">
+                <h2><i class="fas fa-id-card-clip"></i> Your Search Results</h2>
+                <div id="results-summary" class="results-summary">
+                    <p>Based on the information you provided, here are the potential connections we found:</p>
+                </div>
+                <div id="results-content-area">
+                    <!-- Results (direct match, families) will be injected here -->
+                </div>
+                 <div id="no-results-message" class="no-results-card" style="display:none;">
+                    <i class="fas fa-search-minus"></i>
+                    <h3>No Strong Matches Found</h3>
+                    <p>We couldn't find significant matches with the current database. Try using a different photo or ensure the name is correct.</p>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer-bottom">
+            <p>© 2024-2025 AML Wild Face Detector Project. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

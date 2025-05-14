@@ -1,0 +1,482 @@
+body {
+    font-family: 'Poppins', sans-serif; /* Using Poppins as defined in index.html */
+    background-color: #f0f2f5;
+    color: #333;
+    margin: 0;
+    padding: 0; /* Remove body padding if page-container handles it */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.page-container {
+    width: 100%;
+    max-width: 900px; /* Increased max-width slightly */
+    margin: 20px auto; /* Add some margin around the container */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 40px); /* Ensure footer stays down */
+}
+
+.site-header {
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 30px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.logo-icon {
+    font-size: 2.5em;
+    color: #0d6efd; /* Bootstrap primary blue */
+    margin-right: 15px;
+}
+
+.site-header h1 {
+    font-family: 'Merriweather', serif; /* Serif for main title */
+    font-size: 2.8em;
+    color: #2c3e50; /* Darker, more sophisticated blue */
+    margin: 0;
+}
+
+.tagline {
+    font-size: 1.1em;
+    color: #555e68;
+}
+
+.main-content {
+    flex-grow: 1; /* Allows main content to push footer down */
+    width: 100%;
+}
+
+.content-section {
+    display: none; /* Hide sections by default */
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+    margin-bottom: 30px;
+}
+
+.content-section.active-section {
+    display: block; /* Show active section */
+}
+
+
+.input-card, .processing-card, .results-summary, .result-block, .error-card, .no-results-card {
+    background-color: #fff;
+    border: 1px solid #e0e4e8;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.input-card h2, .processing-card h2, #results-section h2 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: #343a40; /* Dark grey */
+    border-bottom: 2px solid #0d6efd;
+    padding-bottom: 12px;
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 1.6em;
+}
+.input-card h2 i, .processing-card h2 i, #results-section h2 i {
+    margin-right: 10px;
+    color: #0d6efd;
+}
+
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057; /* Darker label color */
+    font-size: 0.95em;
+}
+.form-group label i {
+    margin-right: 6px;
+    color: #0d6efd;
+}
+
+.form-group input[type="text"],
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1em;
+    font-family: 'Poppins', sans-serif;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.form-group input[type="text"]:focus,
+.form-group input[type="file"]:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+
+/* Custom file input styling */
+.photo-upload-wrapper {
+    position: relative;
+}
+input[type="file"]#photo {
+    /* Hide default input but keep it accessible */
+    opacity: 0;
+    position: absolute;
+    z-index: -1;
+    width: 0.1px;
+    height: 0.1px;
+}
+.photo-upload-label {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px dashed #ced4da;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    font-size: 0.95em;
+}
+.photo-upload-label:hover {
+    background-color: #dee2e6;
+    border-color: #adb5bd;
+}
+.photo-upload-label i {
+    margin-right: 8px;
+}
+.photo-upload-label span {
+    vertical-align: middle;
+}
+
+.photo-preview-container {
+    margin-top: 15px;
+    text-align: center; /* Center the preview if it's smaller than container */
+}
+#photo-preview {
+    max-width: 200px;
+    max-height: 200px;
+    border: 2px solid #e0e4e8;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.cta-button {
+    background-color: #0d6efd;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%; /* Make button full width of its container */
+}
+.cta-button:hover {
+    background-color: #0b5ed7; /* Darker blue on hover */
+    transform: translateY(-1px);
+}
+.cta-button:disabled {
+    background-color: #6ea8fe; /* Lighter blue when disabled */
+    cursor: not-allowed;
+    transform: translateY(0);
+}
+
+.button-spinner { /* Changed from .spinner to .button-spinner */
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    border-top: 3px solid #fff;
+    width: 18px;
+    height: 18px;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Processing Section */
+.progress-bar-container {
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    height: 10px; /* Slimmer progress bar */
+    overflow: hidden;
+}
+#main-progress-bar { /* Not currently used by JS but good for overall progress */
+    width: 0%; /* Will be updated by JS */
+    height: 100%;
+    background-color: #0d6efd;
+    transition: width 0.5s ease-in-out;
+}
+
+#progress-steps-list { /* Corrected ID */
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+}
+#progress-steps-list li { /* Corrected ID */
+    padding: 8px 0; /* Reduced padding */
+    border-bottom: 1px solid #f1f3f5; /* Lighter border */
+    font-size: 0.9em;
+    color: #495057;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInStep 0.4s forwards;
+}
+#progress-steps-list li:last-child { /* Corrected ID */
+    border-bottom: none;
+}
+@keyframes fadeInStep {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.status-icon {
+    font-size: 1.1em; /* Slightly smaller icons */
+    margin-left: 10px;
+}
+.status-pending::after { content: '⏳'; color: #fd7e14; } /* Orange */
+.status-success::after { content: '✅'; color: #198754; } /* Green */
+.status-error::after { content: '❌'; color: #dc3545; } /* Red */
+.status-working::after {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #0d6efd; /* Blue spinner */
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+}
+
+
+/* Results Section Enhancements */
+#results-content-area {
+    margin-top: 20px;
+}
+.results-summary p {
+    font-size: 1.05em;
+    color: #343a40;
+}
+
+.result-block h3, .result-block h4 {
+    color: #0d6efd;
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+.result-block h3 i, .result-block h4 i {
+    margin-right: 8px;
+}
+
+.families-container h3 {
+    color: #198754; /* Green for families heading */
+}
+.family-card {
+    border-left: 4px solid #198754; /* Green accent for family cards */
+}
+
+.family-card h4 { /* Target the h4 within family-card specifically */
+    display: flex; /* Allows alignment of name and ID */
+    align-items: baseline; /* Aligns text nicely if font sizes differ */
+    justify-content: space-between; /* Pushes ID to the right, or adjust as needed */
+}
+
+.family-id-muted {
+    font-size: 0.8em; /* Smaller font size for the ID */
+    color: #6c757d;   /* Bootstrap's muted text color (gray) */
+    font-weight: normal; /* Normal weight, not bold like the h4 */
+    margin-left: 8px;  /* Space between surname and ID */
+}
+
+
+.identified-person-card {
+    border-left: 4px solid #0d6efd; /* Blue accent for identified person */
+}
+
+.family-members-list {
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 15px;
+}
+.family-member-item {
+    display: flex; /* Keeps flex for alignment */
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    transition: box-shadow 0.2s ease;
+}
+.family-member-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.member-info-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.member-photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+    border: 2px solid #dee2e6;
+    background-color: #e9ecef; /* Fallback bg if image is broken */
+}
+.member-photo-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 15px;
+    background-color: #e9ecef;
+    display: flex; /* Use flex to center icon */
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #6c757d; /* Grey for icon */
+    border: 2px solid #dee2e6;
+}
+
+.member-text-details {
+    flex-grow: 1;
+    font-size: 0.95em;
+}
+.member-text-details strong {
+    color: #212529; /* Darker name */
+    font-weight: 600;
+}
+.member-text-details em {
+    color: #495057; /* Slightly darker relation text */
+    font-size: 0.9em;
+}
+
+/* Error and No Results Styling */
+.error-card, .no-results-card {
+    text-align: center;
+    padding: 30px 25px; /* More padding */
+    border-radius: 8px;
+    margin-top: 20px;
+}
+.error-card {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c2c7;
+}
+.no-results-card {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d3d6d8;
+}
+.error-card i, .no-results-card i {
+    font-size: 2.5em; /* Larger icon */
+    margin-bottom: 15px;
+    display: block;
+}
+.error-card p, .no-results-card h3, .no-results-card p {
+    margin-bottom: 0;
+}
+.no-results-card h3 {
+    color: #383d41;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.error-message {
+    /* If using .error-card, this specific class might be redundant or for inline errors */
+    /* For now, ensure it doesn't conflict */
+    color: inherit;
+    font-weight: normal;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}
+
+
+.site-footer-bottom {
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 30px; /* Ensure space from content */
+    border-top: 1px solid #e0e0e0;
+    color: #6c757d; /* Muted grey */
+    font-size: 0.9em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .site-header h1 {
+        font-size: 2.2em;
+    }
+    .logo-icon {
+        font-size: 2em;
+    }
+    .tagline {
+        font-size: 1em;
+    }
+    .cta-button {
+        font-size: 1em;
+    }
+    .content-section {
+        padding: 15px;
+    }
+    .input-card h2, .processing-card h2, #results-section h2 {
+        font-size: 1.4em;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-header h1 {
+        font-size: 1.8em;
+    }
+    .page-container {
+        margin: 10px auto;
+        padding: 10px;
+    }
+    .form-group input[type="text"], .form-group input[type="file"], .photo-upload-label {
+        font-size: 0.9em;
+    }
+    .member-photo, .member-photo-placeholder {
+        width: 40px;
+        height: 40px;
+        margin-right: 10px;
+        font-size: 20px; /* Icon size for placeholder */
+    }
+    .member-text-details {
+        font-size: 0.9em;
+    }
+}

@@ -1,4 +1,3 @@
-# fiw_family_searcher/training/train_relationship_classifier.py
 import pandas as pd
 import numpy as np
 import sqlite3

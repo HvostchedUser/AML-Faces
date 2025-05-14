@@ -4,7 +4,7 @@ import sqlite3
 from catboost import CatBoostClassifier
 import os
 
-from fiw_family_searcher import config
+from fiw_family_searcher import config  # Ensure config is imported
 from fiw_family_searcher.utils.helpers import setup_logger, load_pickle, calculate_cosine_similarity
 from fiw_family_searcher.data_processing import embedder
 from fiw_family_searcher.search.faiss_search import FaissSearcher
@@ -61,8 +61,6 @@ class QueryProcessor:
 
     def _load_all_persons_details_for_clf(self):
         """Loads necessary person details (embeddings, FID) for family classifier feature extraction."""
-        # This is similar to the logic in train_family_classifier.py
-        # It's needed by _extract_family_features
         details = {}
         avg_face_embs_path = os.path.join(config.EMBEDDINGS_DIR, "person_avg_face_embeddings.pkl")
         person_avg_face_embeddings = {}
@@ -109,22 +107,49 @@ class QueryProcessor:
         return members
 
     def _get_person_details_from_db(self, person_ids):
-        """Fetches name and FID for a list of PersonIDs."""
-        details = {}  # {PersonID: {'Name': name, 'FID': fid}}
+        """Fetches name, FID, and a photo path for a list of PersonIDs."""
+        details = {}  # {PersonID: {'Name': name, 'FID': fid_val, 'PhotoPath': photo_path}}
         if not person_ids: return details
         try:
             conn = sqlite3.connect(config.DB_PATH)
             cursor = conn.cursor()
             # Create a placeholder string for IN clause
             placeholders = ','.join('?' for _ in person_ids)
-            query = f"SELECT PersonID, Name, FID FROM Persons WHERE PersonID IN ({placeholders})"
-            cursor.execute(query, person_ids)
-            for pid, name, fid_val in cursor.fetchall():
-                details[pid] = {'Name': name, 'FID': fid_val}
+            # Get one photo path per person. Using MIN(PhotoPath) from Photos table.
+            query = f"""
+                SELECT p.PersonID, p.Name, p.FID, ph.PhotoPath
+                FROM Persons p
+                LEFT JOIN (
+                    SELECT PersonID, MIN(PhotoPath) as PhotoPath 
+                    FROM Photos 
+                    WHERE PersonID IN ({placeholders})
+                    GROUP BY PersonID
+                ) ph ON p.PersonID = ph.PersonID
+                WHERE p.PersonID IN ({placeholders})
+            """
+            # Need to pass person_ids twice due to use in subquery and main query
+            cursor.execute(query, person_ids + person_ids)
+            for pid, name, fid_val, photo_path in cursor.fetchall():
+                details[pid] = {'Name': name, 'FID': fid_val, 'PhotoPath': photo_path}
             conn.close()
         except Exception as e:
-            logger.error(f"Error fetching person details: {e}")
+            logger.error(f"Error fetching person details with photo path: {e}")
         return details
+
+    def _get_family_details_from_db(self, fid):
+        """ Fetches FamilyRepName for a given FID """
+        family_details = {}
+        try:
+            conn = sqlite3.connect(config.DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT FID, FamilyRepName FROM Families WHERE FID = ?", (fid,))
+            row = cursor.fetchone()
+            if row:
+                family_details = {'FID': row[0], 'FamilyRepName': row[1]}
+            conn.close()
+        except Exception as e:
+            logger.error(f"Error fetching details for FID {fid}: {e}")
+        return family_details
 
     def find_family_and_relations(self, input_photo_path, input_name_str=None, top_n_families=3):
         """
@@ -151,12 +176,6 @@ class QueryProcessor:
         # 2. Initial FAISS Search
         face_search_person_ids, face_search_distances = self.faiss_searcher.search_face(input_face_emb)
 
-        # Convert L2 distances to similarity scores (0 to 1, higher is better)
-        # Simple conversion: score = 1 / (1 + distance). Max distance can be large.
-        # Normalized score: score = exp(-distance / sigma), sigma is a scaling factor (e.g. mean distance)
-        # Or, for ArcFace, cosine distance is 1-cos_sim. If FAISS stores L2 on normalized embs, L2^2 = 2*(1-cos_sim)
-        # So, cos_sim = 1 - (L2_dist^2 / 2). Ensure embeddings are normalized for this.
-        # DeepFace ArcFace embeddings are typically normalized.
         face_search_scores = [1 - (d ** 2 / 2) if d is not None else 0 for d in
                               face_search_distances]  # Cosine sim from L2
         face_results_scored = list(zip(face_search_person_ids, face_search_scores))
@@ -180,7 +199,6 @@ class QueryProcessor:
             return results
 
         # Check for strong direct match
-        # Strongest match from face search
         if face_results_scored and face_results_scored[0][1] > config.STRONG_DIRECT_MATCH_SIMILARITY_THRESHOLD:
             strongest_match_pid = face_results_scored[0][0]
             strongest_match_details = self._get_person_details_from_db([strongest_match_pid]).get(strongest_match_pid)
@@ -221,8 +239,6 @@ class QueryProcessor:
                 family_member_ids = self._get_family_members_from_db(fid)
                 if not family_member_ids: continue
 
-                # _extract_family_features expects all_persons_details, which we loaded
-                # Need to ensure input_face_emb and input_name_emb are correctly passed
                 features = extract_family_clf_features(
                     input_face_emb, input_name_emb,
                     family_member_ids, self._all_persons_details_for_clf
@@ -243,23 +259,49 @@ class QueryProcessor:
 
         # 6. Relationship Prediction for Top N Families
         for i, (fid, prob_belongs) in enumerate(family_membership_scores):
-            if i >= top_n_families: break  # Process only top_n_families
+            if i >= top_n_families: break
 
-            if prob_belongs < config.FAMILY_MEMBERSHIP_THRESHOLD and prob_belongs != -1.0:  # -1 means fallback
+            if prob_belongs < config.FAMILY_MEMBERSHIP_THRESHOLD and prob_belongs != -1.0:
                 logger.info(
                     f"Skipping family {fid}, prob {prob_belongs:.4f} below threshold {config.FAMILY_MEMBERSHIP_THRESHOLD}")
                 continue
 
-            family_info = {"family_id": fid,
+            # Fetch family representative name (surname)
+            family_db_details = self._get_family_details_from_db(fid)
+            family_display_name = family_db_details.get('FamilyRepName', fid)  # Fallback to FID if name not found
+
+            family_info = {"family_id": fid,  # Keep original FID for internal use/linking
+                           "family_display_name": family_display_name,  # For display
                            "probability_belongs": f"{prob_belongs:.4f}" if prob_belongs != -1.0 else "N/A",
                            "members": []}
-            current_family_members = self._get_family_members_from_db(fid)
-            member_details = self._get_person_details_from_db(current_family_members)
+            current_family_members_pids = self._get_family_members_from_db(fid)
+            current_family_member_details = self._get_person_details_from_db(current_family_members_pids)
 
             if self.relationship_classifier and self._person_avg_face_embeddings_for_rel_clf:
-                for member_pid in current_family_members:
-                    member_data = {"person_id": member_pid,
-                                   "name": member_details.get(member_pid, {}).get('Name', 'Unknown')}
+                for member_pid in current_family_members_pids:
+                    member_data = {"person_id": member_pid}
+                    member_db_details = current_family_member_details.get(member_pid, {})
+                    member_data["name"] = member_db_details.get('Name', 'Unknown')
+
+                    abs_photo_path = member_db_details.get('PhotoPath')
+                    if abs_photo_path:
+                        try:
+                            # Ensure config.FIDS_FULL_DIR is an absolute path for relpath
+                            abs_fids_full_dir = os.path.abspath(config.FIDS_FULL_DIR)
+                            if os.path.commonpath([abs_photo_path, abs_fids_full_dir]) == abs_fids_full_dir:
+                                relative_photo_path = os.path.relpath(abs_photo_path, abs_fids_full_dir)
+                                # Ensure URL uses forward slashes, even on Windows
+                                member_data["photo_url"] = f"/member_images/{relative_photo_path.replace(os.sep, '/')}"
+                            else:  # Path is not under FIDS_FULL_DIR
+                                member_data["photo_url"] = None
+                                logger.warning(
+                                    f"Photo path {abs_photo_path} for {member_pid} is not relative to {abs_fids_full_dir}")
+                        except ValueError:  # os.path.relpath can raise ValueError if paths are on different drives (Windows)
+                            member_data["photo_url"] = None
+                            logger.warning(
+                                f"Could not determine relative path for {abs_photo_path} against {abs_fids_full_dir}")
+                    else:
+                        member_data["photo_url"] = None
 
                     member_face_emb = self._person_avg_face_embeddings_for_rel_clf.get(member_pid)
                     if member_face_emb is None:
@@ -283,11 +325,26 @@ class QueryProcessor:
                     family_info["members"].append(member_data)
             else:
                 family_info["message"] = "Relationship classifier not available or embeddings missing."
-                for member_pid in current_family_members:
-                    member_data = {"person_id": member_pid,
-                                   "name": member_details.get(member_pid, {}).get('Name', 'Unknown'),
-                                   "relationship_to_input": "N/A"}
-                    family_info["members"].append(member_data)
+                for member_pid in current_family_members_pids:
+                    member_db_details = current_family_member_details.get(member_pid, {})
+                    abs_photo_path = member_db_details.get('PhotoPath')
+                    photo_url = None
+                    if abs_photo_path:
+                        try:
+                            abs_fids_full_dir = os.path.abspath(config.FIDS_FULL_DIR)
+                            if os.path.commonpath([abs_photo_path, abs_fids_full_dir]) == abs_fids_full_dir:
+                                relative_photo_path = os.path.relpath(abs_photo_path, abs_fids_full_dir)
+                                # Ensure URL uses forward slashes, even on Windows
+                                photo_url = f"/member_images/{relative_photo_path.replace(os.sep, '/')}"
+                        except ValueError:
+                            pass  # photo_url remains None
+
+                    family_info["members"].append({
+                        "person_id": member_pid,
+                        "name": member_db_details.get('Name', 'Unknown'),
+                        "photo_url": photo_url,
+                        "relationship_to_input": "N/A"
+                    })
 
             results["candidate_families"].append(family_info)
 

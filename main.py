@@ -1,4 +1,3 @@
-# fiw_family_searcher/main.py
 import argparse
 import os
 import json

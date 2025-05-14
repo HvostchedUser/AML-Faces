@@ -1,4 +1,3 @@
-# fiw_family_searcher/search/fusion.py
 from collections import defaultdict
 
 

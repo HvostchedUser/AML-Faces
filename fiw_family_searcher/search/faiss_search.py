@@ -1,4 +1,3 @@
-# fiw_family_searcher/search/faiss_search.py
 import faiss
 import numpy as np
 import os

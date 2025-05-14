@@ -1,4 +1,3 @@
-# fiw_family_searcher/training/train_family_classifier.py
 import pandas as pd
 import numpy as np
 import sqlite3
@@ -6,8 +5,10 @@ from sklearn.model_selection import train_test_split
 from catboost import CatBoostClassifier
 from tqdm import tqdm
 import random
+import os
 
 from fiw_family_searcher import config
+from fiw_family_searcher.data_processing import embedder
 from fiw_family_searcher.utils.helpers import setup_logger, save_pickle, load_pickle, calculate_cosine_similarity
 from fiw_family_searcher.data_processing.embedder import get_face_embedding, \
     get_name_embedding  # For ad-hoc cases if needed
